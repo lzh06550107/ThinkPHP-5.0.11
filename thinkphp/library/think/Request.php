@@ -1539,7 +1539,7 @@ class Request
      */
     public function cache($key, $expire = null, $except = [], $tag = null)
     {
-        if (!is_array($except)) {
+        if (!is_array($except)) {// 如果排除参数不是数组
             $tag    = $except;
             $except = [];
         }
@@ -1597,7 +1597,7 @@ class Request
                 $response               = Response::create($content)->header($header);
                 throw new \think\exception\HttpResponseException($response);
             } else {
-                $this->cache = [$key, $expire, $tag];
+                $this->cache = [$key, $expire, $tag]; // 设置缓存配置
             }
         }
     }

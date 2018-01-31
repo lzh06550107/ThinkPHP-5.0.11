@@ -74,16 +74,23 @@ class App
 
         try {
             $config = self::initCommon();
-            /*
-             * 由于默认是采用多模块的支持，所以多个模块的情况下必须在URL地址中标识当前模块，如果只有一个模块的话，可以进行模块绑定，方法是应用的入口文件中添加如下代码：
-             *
-             * // 绑定当前访问到index模块
-             * define('BIND_MODULE','index');
-             */
             if (defined('BIND_MODULE')) {
+                /**
+                 * 由于默认是采用多模块的支持，所以多个模块的情况下必须在URL地址中标识当前模块，如果只有一个模块的话，可以进行模块绑定，方法是应用的入口文件中添加如下代码：
+                 *
+                 * // 绑定当前访问到index模块
+                 * define('BIND_MODULE','index');
+                 */
                 // 模块/控制器绑定
                 BIND_MODULE && Route::bind(BIND_MODULE);
             } elseif ($config['auto_bind_module']) {
+                /**
+                 *  自动绑定会将入口文件名绑定到对应模块。比如index.php入口文件则绑定到index模块。
+                 *  admin.php入口文件则绑定到admin模块。同时app目录下必须存在对应模块目录。
+                 * 不需要写define('BIND_MODULE','admin');
+                 *  如果需要自动绑定到admin模块。则在public目录下建立一个admin.php文件。
+                 * 在app目录下建立一个admin目录作为模块目录，然后访问admin.php则会自动绑定。
+                 */
                 // 入口自动绑定
                 $name = pathinfo($request->baseFile(), PATHINFO_FILENAME);
                 if ($name && 'index' != $name && is_dir(APP_PATH . $name)) {
@@ -91,7 +98,7 @@ class App
                 }
             }
 
-            $request->filter($config['default_filter']);
+            $request->filter($config['default_filter']); // 默认全局过滤方法
 
             // 默认语言
             Lang::range($config['default_lang']);
@@ -99,7 +106,7 @@ class App
                 // 开启多语言机制 检测当前语言
                 Lang::detect();
             }
-            $request->langset(Lang::range());
+            $request->langset(Lang::range()); // 设置语言
 
             // 加载系统语言包
             Lang::load([
@@ -125,15 +132,15 @@ class App
 
             // 监听app_begin
             Hook::listen('app_begin', $dispatch);
-            // 请求缓存检查
+            // 请求缓存检查，第二次访问相同的路由地址的时候，会自动获取请求缓存的数据响应输出，并发送304状态码。
             $request->cache($config['request_cache'], $config['request_cache_expire'], $config['request_cache_except']);
 
             $data = self::exec($dispatch, $config);
         } catch (HttpResponseException $exception) {
-            $data = $exception->getResponse();
+            $data = $exception->getResponse(); // 异常发送到客户端
         }
 
-        // 清空类的实例化
+        // 清空类的实例化，把加载器初始化类的实例置为空，节约内存
         Loader::clearInstance();
 
         // 输出数据到客户端
@@ -148,7 +155,7 @@ class App
             $response = Response::create();
         }
 
-        // 监听app_end
+        // 监听app_end，应用结束响应发送前的钩子
         Hook::listen('app_end', $response);
 
         return $response;
@@ -339,8 +346,9 @@ class App
             $result = explode('/', $result);
         }
         $request = Request::instance();
-        if ($config['app_multi_module']) {
+        if ($config['app_multi_module']) { // 如果开启多模块
             // 多模块部署
+            // 如果没有指定模块名，则使用默认配置模块
             $module    = strip_tags(strtolower($result[0] ?: $config['default_module']));
             $bind      = Route::getBind('module');
             $available = false;
@@ -362,7 +370,7 @@ class App
                 // 初始化模块
                 $request->module($module);
                 $config = self::init($module);
-                // 模块请求缓存检查
+                // 模块请求缓存检查，因为模块可能对请求缓存重新进行配置
                 $request->cache($config['request_cache'], $config['request_cache_expire'], $config['request_cache_except']);
             } else {
                 throw new HttpException(404, 'module not exists:' . $module);
@@ -375,7 +383,7 @@ class App
         // 当前模块路径
         App::$modulePath = APP_PATH . ($module ? $module . DS : '');
 
-        // 是否自动转换控制器和操作名
+        // 是否自动转换控制器和操作名，如果开启模块名和操作名会直接转换为小写处理。一旦关闭自动转换，URL地址中的控制器名就变成大小写敏感了
         $convert = is_bool($convert) ? $convert : $config['url_convert'];
         // 获取控制器名
         $controller = strip_tags($result[1] ?: $config['default_controller']);
@@ -413,9 +421,9 @@ class App
             throw new HttpException(404, 'method not exists:' . get_class($instance) . '->' . $action . '()');
         }
 
-        Hook::listen('action_begin', $call);
+        Hook::listen('action_begin', $call); // 动作执行前的钩子
 
-        return self::invokeMethod($call, $vars);
+        return self::invokeMethod($call, $vars); // 执行动作
     }
 
     /**
@@ -489,16 +497,16 @@ class App
         // 加载模块初始化文件
         if (is_file(APP_PATH . $module . 'init' . EXT)) {
             include APP_PATH . $module . 'init' . EXT;
-        } elseif (is_file(RUNTIME_PATH . $module . 'init' . EXT)) {
+        } elseif (is_file(RUNTIME_PATH . $module . 'init' . EXT)) { // 加载模块运行时初始化文件
             include RUNTIME_PATH . $module . 'init' . EXT;
         } else {
             $path = APP_PATH . $module;
             // 加载模块配置
             $config = Config::load(CONF_PATH . $module . 'config' . CONF_EXT);
-            // 读取数据库配置文件
+            // 读取模块数据库配置文件
             $filename = CONF_PATH . $module . 'database' . CONF_EXT;
             Config::load($filename, 'database');
-            // 读取扩展配置文件
+            // 读取模块扩展配置文件
             if (is_dir(CONF_PATH . $module . 'extra')) {
                 $dir   = CONF_PATH . $module . 'extra';
                 $files = scandir($dir);
@@ -510,17 +518,17 @@ class App
                 }
             }
 
-            // 加载应用状态配置
+            // 加载应用状态配置？？？这是干什么用的
             if ($config['app_status']) {
                 $config = Config::load(CONF_PATH . $module . $config['app_status'] . CONF_EXT);
             }
 
-            // 加载行为扩展文件
+            // 加载模块行为扩展文件
             if (is_file(CONF_PATH . $module . 'tags' . EXT)) {
                 Hook::import(include CONF_PATH . $module . 'tags' . EXT);
             }
 
-            // 加载公共文件
+            // 加载模块公共文件
             if (is_file($path . 'common' . EXT)) {
                 include $path . 'common' . EXT;
             }
@@ -546,7 +554,7 @@ class App
         $path   = $request->path();
         $depr   = $config['pathinfo_depr'];
         $result = false;
-        // 路由检测
+        // 路由检测，如果开启了url_route_on参数的话，会首先进行URL的路由检测。
         $check = !is_null(self::$routeCheck) ? self::$routeCheck : $config['url_route_on'];
         if ($check) {
             // 开启路由
@@ -557,7 +565,7 @@ class App
                     Route::rules($rules);
                 }
             } else {
-                $files = $config['route_config_file'];
+                $files = $config['route_config_file']; // 获取路由的配置文件名称
                 foreach ($files as $file) {
                     if (is_file(CONF_PATH . $file . CONF_EXT)) {
                         // 导入路由配置
@@ -572,12 +580,12 @@ class App
             // 路由检测（根据路由定义返回不同的URL调度）
             $result = Route::check($request, $path, $depr, $config['url_domain_deploy']);
             $must   = !is_null(self::$routeMust) ? self::$routeMust : $config['url_route_must'];
-            if ($must && false === $result) {
+            if ($must && false === $result) { // 如果开启必须使用路由，如果没有匹配路由，则抛出异常
                 // 路由无效
                 throw new RouteNotFoundException();
             }
         }
-        if (false === $result) {
+        if (false === $result) { // 如果关闭路由或者路由检测无效则进行默认的模块/控制器/操作的分析识别。
             // 路由无效 解析模块/控制器/操作/参数... 支持控制器自动搜索
             $result = Route::parseUrl($path, $depr, $config['controller_auto_search']);
         }

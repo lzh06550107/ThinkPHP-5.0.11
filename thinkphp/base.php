@@ -53,5 +53,5 @@ if (is_file(ROOT_PATH . '.env')) {
 // 注册错误和异常处理机制
 \think\Error::register();
 
-// 加载惯例配置文件
+// 加载惯例配置文件(这里是默认配置，后面可以被用户配置覆盖)
 \think\Config::set(include THINK_PATH . 'convention' . EXT);

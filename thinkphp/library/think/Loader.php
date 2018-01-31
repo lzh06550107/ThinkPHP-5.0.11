@@ -11,18 +11,17 @@ class Loader
 {
     protected static $instance = [];
     // 类名映射
-    protected static $map = [];
-
+    protected static $map = []; // 来自用户自定义或者扩展插件类映射
     // 命名空间别名
     protected static $namespaceAlias = [];
 
     // PSR-4
-    private static $prefixLengthsPsr4 = [];
+    private static $prefixLengthsPsr4 = []; //
     private static $prefixDirsPsr4    = [];
     private static $fallbackDirsPsr4  = [];
 
     // PSR-0
-    private static $prefixesPsr0     = [];
+    private static $prefixesPsr0     = []; // 用前缀来检索的索引数组
     private static $fallbackDirsPsr0 = [];
 
     // 自动加载的文件
@@ -34,7 +33,7 @@ class Loader
         // 检测命名空间别名
         if (!empty(self::$namespaceAlias)) {
             $namespace = dirname($class);
-            if (isset(self::$namespaceAlias[$namespace])) {
+            if (isset(self::$namespaceAlias[$namespace])) { // 如果命名空间别名存在
                 $original = self::$namespaceAlias[$namespace] . '\\' . basename($class);
                 if (class_exists($original)) {
                     return class_alias($original, $class, false);
@@ -61,12 +60,13 @@ class Loader
      */
     private static function findFile($class)
     {
+        // 1、先从类映射中查找
         if (!empty(self::$map[$class])) {
             // 类库映射
             return self::$map[$class];
         }
 
-        // 查找 PSR-4
+        // 2、查找 PSR-4
         $logicalPathPsr4 = strtr($class, '\\', DS) . EXT;
 
         $first = $class[0];
@@ -74,6 +74,7 @@ class Loader
             foreach (self::$prefixLengthsPsr4[$first] as $prefix => $length) {
                 if (0 === strpos($class, $prefix)) {
                     foreach (self::$prefixDirsPsr4[$prefix] as $dir) {
+                        // 截取除了前缀的后半段和映射路径合并
                         if (is_file($file = $dir . DS . substr($logicalPathPsr4, $length))) {
                             return $file;
                         }
@@ -82,14 +83,14 @@ class Loader
             }
         }
 
-        // 查找 PSR-4 fallback dirs
+        // 3、查找 PSR-4 fallback dirs
         foreach (self::$fallbackDirsPsr4 as $dir) {
             if (is_file($file = $dir . DS . $logicalPathPsr4)) {
                 return $file;
             }
         }
 
-        // 查找 PSR-0
+        // 4、查找 PSR-0
         if (false !== $pos = strrpos($class, '\\')) {
             // namespaced class name
             $logicalPathPsr0 = substr($logicalPathPsr4, 0, $pos + 1)
@@ -111,14 +112,14 @@ class Loader
             }
         }
 
-        // 查找 PSR-0 fallback dirs
+        // 5、查找 PSR-0 fallback dirs
         foreach (self::$fallbackDirsPsr0 as $dir) {
             if (is_file($file = $dir . DS . $logicalPathPsr0)) {
                 return $file;
             }
         }
 
-        return self::$map[$class] = false;
+        return self::$map[$class] = false; // 如果都没有找到，则把该类映射设置为false
     }
 
     // 注册classmap
@@ -131,7 +132,7 @@ class Loader
         }
     }
 
-    // 注册命名空间
+    // 注册命名空间，指定命名空间对应的目录路径
     public static function addNamespace($namespace, $path = '')
     {
         if (is_array($namespace)) {
@@ -147,12 +148,12 @@ class Loader
     private static function addPsr0($prefix, $paths, $prepend = false)
     {
         if (!$prefix) {
-            if ($prepend) {
+            if ($prepend) { // 前缀加入
                 self::$fallbackDirsPsr0 = array_merge(
                     (array) $paths,
                     self::$fallbackDirsPsr0
                 );
-            } else {
+            } else { // 追加
                 self::$fallbackDirsPsr0 = array_merge(
                     self::$fallbackDirsPsr0,
                     (array) $paths
@@ -164,7 +165,7 @@ class Loader
 
         $first = $prefix[0];
         if (!isset(self::$prefixesPsr0[$first][$prefix])) {
-            self::$prefixesPsr0[$first][$prefix] = (array) $paths;
+            self::$prefixesPsr0[$first][$prefix] = (array) $paths; // 建立以前缀第一个字母为索引的二维数组
 
             return;
         }
@@ -184,7 +185,7 @@ class Loader
     // 添加Psr4空间
     private static function addPsr4($prefix, $paths, $prepend = false)
     {
-        if (!$prefix) {
+        if (!$prefix) { //如果没有前缀
             // Register directories for the root namespace.
             if ($prepend) {
                 self::$fallbackDirsPsr4 = array_merge(
@@ -203,7 +204,7 @@ class Loader
             if ('\\' !== $prefix[$length - 1]) {
                 throw new \InvalidArgumentException("A non-empty PSR-4 prefix must end with a namespace separator.");
             }
-            self::$prefixLengthsPsr4[$prefix[0]][$prefix] = $length;
+            self::$prefixLengthsPsr4[$prefix[0]][$prefix] = $length; // 前缀索引的值为长度
             self::$prefixDirsPsr4[$prefix]                = (array) $paths;
         } elseif ($prepend) {
             // Prepend directories for an already registered namespace.
@@ -259,30 +260,30 @@ class Loader
     private static function registerComposerLoader()
     {
         if (is_file(VENDOR_PATH . 'composer/autoload_namespaces.php')) {
-            $map = require VENDOR_PATH . 'composer/autoload_namespaces.php';
+            $map = require VENDOR_PATH . 'composer/autoload_namespaces.php'; // 加载命名空间映射
             foreach ($map as $namespace => $path) {
-                self::addPsr0($namespace, $path);
+                self::addPsr0($namespace, $path); // 注册符合psr0规范类映射
             }
         }
 
         if (is_file(VENDOR_PATH . 'composer/autoload_psr4.php')) {
             $map = require VENDOR_PATH . 'composer/autoload_psr4.php';
             foreach ($map as $namespace => $path) {
-                self::addPsr4($namespace, $path);
+                self::addPsr4($namespace, $path); // 注册符合psr4规范类映射
             }
         }
 
         if (is_file(VENDOR_PATH . 'composer/autoload_classmap.php')) {
             $classMap = require VENDOR_PATH . 'composer/autoload_classmap.php';
             if ($classMap) {
-                self::addClassMap($classMap);
+                self::addClassMap($classMap); // 注册自定义类映射
             }
         }
 
         if (is_file(VENDOR_PATH . 'composer/autoload_files.php')) {
             $includeFiles = require VENDOR_PATH . 'composer/autoload_files.php';
             foreach ($includeFiles as $fileIdentifier => $file) {
-                if (empty(self::$autoloadFiles[$fileIdentifier])) {
+                if (empty(self::$autoloadFiles[$fileIdentifier])) { // 加载配置的文件
                     __require_file($file);
                     self::$autoloadFiles[$fileIdentifier] = true;
                 }

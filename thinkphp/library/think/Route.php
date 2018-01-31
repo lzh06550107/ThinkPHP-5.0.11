@@ -838,6 +838,7 @@ class Route
         // 分隔符替换 确保路由定义使用统一的分隔符
         $url = str_replace($depr, '|', $url);
 
+        // 如果路由设置中存在别名设置，则检测请求是否是路由别名
         if (isset(self::$rules['alias'][$url]) || isset(self::$rules['alias'][strstr($url, '|', true)])) {
             // 检测路由别名
             $result = self::checkRouteAlias($request, $url, $depr);
@@ -873,7 +874,7 @@ class Route
             }
         }
 
-        // 路由规则检测
+        // 路由规则检测(动态检测，一般是正则表达式匹配)
         if (!empty($rules)) {
             return self::checkRoute($request, $rules, $url, $depr);
         }

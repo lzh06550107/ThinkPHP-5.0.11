@@ -34,7 +34,7 @@ class Error
          * 可以这样理解调用条件：
          * 1、当页面被用户强制停止时
          * 2、当程序代码运行超时时
-         * 3、当ＰＨＰ代码执行完成时，代码执行存在异常和错误、警告
+         * 3、当PHP代码执行完成时，代码执行存在异常和错误、警告
          */
         register_shutdown_function([__CLASS__, 'appShutdown']);
     }
@@ -70,7 +70,7 @@ class Error
     {
         $exception = new ErrorException($errno, $errstr, $errfile, $errline, $errcontext);
         if (error_reporting() & $errno) { //如果开启该错误报告
-            // 将错误信息托管至 think\exception\ErrorException
+            // 将错误信息转换为think\exception\ErrorException 异常
             throw $exception;
         } else {
             self::getExceptionHandler()->report($exception);

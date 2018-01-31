@@ -74,7 +74,25 @@ class Response
         $class = false !== strpos($type, '\\') ? $type : '\\think\\response\\' . ucfirst($type);
         if (class_exists($class)) {
             $response = new $class($data, $code, $header, $options);
-        } else {
+        } else { // HTML类不存在
+            /**
+             class A {
+            public static function get_self() {
+            return new self();
+            }
+
+            public static function get_static() {
+            return new static();
+            }
+            }
+
+            class B extends A {}
+
+            echo get_class(B::get_self()); // A
+            echo get_class(B::get_static()); // B
+            echo get_class(A::get_static()); // A
+             * static表示调用本代码所在的类，而self表示当前代码所在的类
+             */
             $response = new static($data, $code, $header, $options);
         }
 
@@ -89,7 +107,7 @@ class Response
      */
     public function send()
     {
-        // 监听response_send
+        // 监听response_send，响应发送前钩子
         Hook::listen('response_send', $this);
 
         // 处理输出数据
@@ -102,7 +120,7 @@ class Response
 
         if (200 == $this->code) {
             $cache = Request::instance()->getCache();
-            if ($cache) {
+            if ($cache) {// 如果需要缓存，则修改头部缓存信息
                 $this->header['Cache-Control'] = 'max-age=' . $cache[1] . ',must-revalidate';
                 $this->header['Last-Modified'] = gmdate('D, d M Y H:i:s') . ' GMT';
                 $this->header['Expires']       = gmdate('D, d M Y H:i:s', $_SERVER['REQUEST_TIME'] + $cache[1]) . ' GMT';
@@ -127,15 +145,20 @@ class Response
 
         if (function_exists('fastcgi_finish_request')) {
             // 提高页面响应
+            /**
+             * 当PHP运行在FastCGI模式时,PHP FPM提供了一个名为fastcgi_finish_request的方法。
+             * 按照文档上的说法,此方法可以提高请求的处理速度,如果有些处理可以在页面生成完后再进行,就可以使用这个方法。
+             * 响应完成, 关闭连接。在调用fastcgi_finish_request后,客户端响应就已经结束,但与此同时服务端脚本却继续运行！
+             */
             fastcgi_finish_request();
         }
 
-        // 监听response_end
+        // 监听response_end，响应结束钩子
         Hook::listen('response_end', $this);
 
         // 清空当次请求有效的数据
         if (!($this instanceof RedirectResponse)) {
-            Session::flush();
+            Session::flush(); // 如果不是重定向响应，则清空会话中的flash数据
         }
     }
 
