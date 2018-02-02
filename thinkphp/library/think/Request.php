@@ -356,7 +356,7 @@ class Request
     }
 
     /**
-     * 设置或获取URL访问根地址
+     * 设置或获取URL访问根地址，一般为入口脚本文件，如index.php
      * @access public
      * @param string $url URL地址
      * @return string
@@ -504,6 +504,7 @@ class Request
             // 获取原始请求类型
             return IS_CLI ? 'GET' : (isset($this->server['REQUEST_METHOD']) ? $this->server['REQUEST_METHOD'] : $_SERVER['REQUEST_METHOD']);
         } elseif (!$this->method) {
+            // 支持请求类型伪装，可以在POST表单里面提交_method(var_method配置值为_method)变量，传入需要伪装的请求类型
             if (isset($_POST[Config::get('var_method')])) {
                 $this->method = strtoupper($_POST[Config::get('var_method')]);
                 $this->{$this->method}($_POST);
@@ -927,6 +928,9 @@ class Request
 
     /**
      * 设置或者获取当前的Header
+     *
+     * HTTP请求头信息的名称不区分大小写，并且_会自动转换为-
+     *
      * @access public
      * @param string|array  $name header名称
      * @param string        $default 默认值
@@ -1228,6 +1232,10 @@ class Request
 
     /**
      * 当前是否Ajax请求
+     *
+     * 可以对请求进行AJAX请求伪装，如下：
+     * http://localhost/index?_ajax=1
+     *
      * @access public
      * @param bool $ajax  true 获取原始ajax请求
      * @return bool
@@ -1245,6 +1253,10 @@ class Request
 
     /**
      * 当前是否Pjax请求
+     *
+     * PJAX请求伪装
+     * http://localhost/index?_pjax=1
+     *
      * @access public
      * @param bool $pjax  true 获取原始pjax请求
      * @return bool
@@ -1629,6 +1641,12 @@ class Request
         }
     }
 
+    /**
+     * 支持属性形式访问绑定对象，如Request::instance()->user = new User;
+     *
+     * @param $name
+     * @param $value
+     */
     public function __set($name, $value)
     {
         $this->bind[$name] = $value;

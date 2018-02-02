@@ -1,13 +1,7 @@
 <?php
-// +----------------------------------------------------------------------
-// | ThinkPHP [ WE CAN DO IT JUST THINK ]
-// +----------------------------------------------------------------------
-// | Copyright (c) 2006~2017 http://thinkphp.cn All rights reserved.
-// +----------------------------------------------------------------------
-// | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
-// +----------------------------------------------------------------------
-// | Author: liu21st <liu21st@gmail.com>
-// +----------------------------------------------------------------------
+/**
+ * 支持Restful控制器
+ */
 
 namespace think\controller;
 
@@ -32,7 +26,7 @@ abstract class Rest
     ];
 
     /**
-     * 构造函数 取得模板对象实例
+     * 构造函数 取得模板对象实例，在Rest操作方法中，可以使用$this->type获取当前访问的资源类型，用$this->method获取当前的请求类型
      * @access public
      */
     public function __construct()
@@ -59,6 +53,9 @@ abstract class Rest
     }
 
     /**
+     * 除了普通方式定义Restful操作方法外，系统还支持另外一种自动调用方式，就是根据当前请求类型和资源类型自动调用相关操作方法。系统的自动调用规则是
+     */
+    /**
      * REST 调用
      * @access public
      * @param string $method 方法名
@@ -67,16 +64,19 @@ abstract class Rest
      */
     public function _empty($method)
     {
+        // 操作名_提交类型_资源后缀，标准的Restful方法定义，例如 read_get_pdf
         if (method_exists($this, $method . '_' . $this->method . '_' . $this->type)) {
             // RESTFul方法支持
             $fun = $method . '_' . $this->method . '_' . $this->type;
+            // 操作名_资源后缀，当前提交类型和restDefaultMethod相同的时候，例如read_pdf
         } elseif ($this->method == $this->restDefaultMethod && method_exists($this, $method . '_' . $this->type)) {
             $fun = $method . '_' . $this->type;
+            // 操作名_提交类型，当前资源后缀和restDefaultType相同的时候，例如read_post
         } elseif ($this->type == $this->restDefaultType && method_exists($this, $method . '_' . $this->method)) {
             $fun = $method . '_' . $this->method;
         }
         if (isset($fun)) {
-            return App::invokeMethod([$this, $fun]);
+            return App::invokeMethod([$this, $fun]); // 调用方法
         } else {
             // 抛出异常
             throw new \Exception('error action :' . $method);

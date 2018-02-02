@@ -1,13 +1,7 @@
 <?php
-// +----------------------------------------------------------------------
-// | ThinkPHP [ WE CAN DO IT JUST THINK ]
-// +----------------------------------------------------------------------
-// | Copyright (c) 2006~2017 http://thinkphp.cn All rights reserved.
-// +----------------------------------------------------------------------
-// | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
-// +----------------------------------------------------------------------
-// | Author: liu21st <liu21st@gmail.com>
-// +----------------------------------------------------------------------
+/**
+ * 路由类，路由的作用是简化URL访问地址，并根据定义的路由类型做出正确的解析。
+ */
 
 namespace think;
 
@@ -1203,7 +1197,7 @@ class Route
      * @access public
      * @param string    $url URL地址
      * @param string    $depr URL分隔符
-     * @param bool      $autoSearch 是否自动深度搜索控制器
+     * @param bool      $autoSearch 是否自动深度搜索控制器，这样在路径中可以省略多级控制器名称
      * @return array
      */
     public static function parseUrl($url, $depr = '/', $autoSearch = false)

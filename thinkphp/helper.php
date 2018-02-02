@@ -143,6 +143,7 @@ if (!function_exists('input')) {
     }
 }
 
+// 提供了widget函数用于简化Widget控制器的调用
 if (!function_exists('widget')) {
     /**
      * 渲染输出Widget
@@ -198,6 +199,7 @@ if (!function_exists('db')) {
     }
 }
 
+// 为了方便调用，系统提供了controller助手函数直接实例化多层控制器
 if (!function_exists('controller')) {
     /**
      * 实例化控制器 格式：[模块/]控制器
@@ -212,6 +214,7 @@ if (!function_exists('controller')) {
     }
 }
 
+// 除了实例化分层控制器外，还可以直接调用分层控制器类的某个方法，助手函数action实现相同的功能
 if (!function_exists('action')) {
     /**
      * 调用模块的操作方法 参数格式 [模块/控制器/]操作
@@ -447,6 +450,7 @@ if (!function_exists('view')) {
     }
 }
 
+// 以Json格式输出
 if (!function_exists('json')) {
     /**
      * 获取\think\response\Json对象实例
@@ -462,6 +466,7 @@ if (!function_exists('json')) {
     }
 }
 
+// 以Jsonp格式输出
 if (!function_exists('jsonp')) {
     /**
      * 获取\think\response\Jsonp对象实例
@@ -477,6 +482,7 @@ if (!function_exists('jsonp')) {
     }
 }
 
+// 以xml格式输出
 if (!function_exists('xml')) {
     /**
      * 获取\think\response\Xml对象实例

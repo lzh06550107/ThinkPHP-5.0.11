@@ -206,7 +206,7 @@ class App
             // 静态方法
             $reflect = new \ReflectionMethod($method);
         }
-        $args = self::bindParams($reflect, $vars);
+        $args = self::bindParams($reflect, $vars); // 绑定参数到方法
 
         self::$debug && Log::record('[ RUN ] ' . $reflect->class . '->' . $reflect->name . '[ ' . $reflect->getFileName() . ' ]', 'info');
         return $reflect->invokeArgs(isset($class) ? $class : null, $args);
@@ -242,17 +242,17 @@ class App
     {
         if (empty($vars)) {
             // 自动获取请求变量
-            if (Config::get('url_param_type')) {
-                $vars = Request::instance()->route();
+            if (Config::get('url_param_type')) { // url中参数是按名值对解析还是按顺序解析
+                $vars = Request::instance()->route(); // 按顺序解析
             } else {
-                $vars = Request::instance()->param();
+                $vars = Request::instance()->param(); // 按名值对解析
             }
         }
         $args = [];
         if ($reflect->getNumberOfParameters() > 0) {
             // 判断数组类型 数字数组时按顺序绑定参数
             reset($vars);
-            $type   = key($vars) === 0 ? 1 : 0;
+            $type   = key($vars) === 0 ? 1 : 0; // 是顺序解析还是名值对解析，0为名值解析，1为顺序解析
             $params = $reflect->getParameters();
             foreach ($params as $param) {
                 $args[] = self::getParamValue($param, $vars, $type);
@@ -271,25 +271,28 @@ class App
      */
     private static function getParamValue($param, &$vars, $type)
     {
-        $name  = $param->getName();
-        $class = $param->getClass();
+        $name  = $param->getName(); // 参数名称
+        $class = $param->getClass(); // 参数对象类型
         if ($class) {
             $className = $class->getName();
-            $bind      = Request::instance()->$name;
+            $bind      = Request::instance()->$name; // 1、从Request对象属性中获取参数对象
             if ($bind instanceof $className) {
                 $result = $bind;
             } else {
+                // 2、如果依赖注入的类有定义一个可调用的静态invoke方法，则会自动调用invoke方法完成依赖注入的自动实例化。
                 if (method_exists($className, 'invoke')) {
                     $method = new \ReflectionMethod($className, 'invoke');
                     if ($method->isPublic() && $method->isStatic()) {
                         return $className::invoke(Request::instance());
                     }
                 }
+                // 3、如果类中存在instance方法，则直接通过该方法返回该类实例对象，否则重新创建一个
+                // 这里实现对象参数的自动注入
                 $result = method_exists($className, 'instance') ? $className::instance() : new $className;
             }
-        } elseif (1 == $type && !empty($vars)) {
+        } elseif (1 == $type && !empty($vars)) { // 顺序参数
             $result = array_shift($vars);
-        } elseif (0 == $type && isset($vars[$name])) {
+        } elseif (0 == $type && isset($vars[$name])) { //名值对参数
             $result = $vars[$name];
         } elseif ($param->isDefaultValueAvailable()) {
             $result = $param->getDefaultValue();
@@ -401,6 +404,7 @@ class App
         Hook::listen('module_init', $request);
 
         try {
+            // 空控制器的概念是指当系统找不到指定的控制器名称的时候，系统会尝试定位空控制器，空控制器可以配置，默认为Error类
             $instance = Loader::controller($controller, $config['url_controller_layer'], $config['controller_suffix'], $config['empty_controller']);
         } catch (ClassNotFoundException $e) {
             throw new HttpException(404, 'controller not exists:' . $e->getClass());
@@ -600,7 +604,7 @@ class App
             }
         }
         if (false === $result) { // 如果关闭路由或者路由检测无效则进行默认的模块/控制器/操作的分析识别。
-            // 路由无效 解析模块/控制器/操作/参数... 支持控制器自动搜索
+            // 路由无效 解析模块/控制器/操作/参数，$config['controller_auto_search']支持控制器自动搜索
             $result = Route::parseUrl($path, $depr, $config['controller_auto_search']);
         }
         return $result;

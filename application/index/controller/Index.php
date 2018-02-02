@@ -55,6 +55,7 @@ class Index extends Controller
         echo '模块：'.$request->module();
         echo '<br/>控制器：'.$request->controller();
         echo '<br/>操作：'.$request->action();
+        echo '<br/>参数值：'.$name;
     }
 
     public function hello5(Request $request, $name='World') {

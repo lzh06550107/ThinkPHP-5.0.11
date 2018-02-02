@@ -402,19 +402,19 @@ class Loader
     {
         if (false !== strpos($name, '\\')) {
             $class  = $name;
-            $module = Request::instance()->module();
+            $module = Request::instance()->module(); // 切换请求模块,支持跨模块调用
         } else {
             if (strpos($name, '/')) {
                 list($module, $name) = explode('/', $name);
             } else {
-                $module = Request::instance()->module();
+                $module = Request::instance()->module(); // 切换请求模块,支持跨模块调用
             }
-            $class = self::parseClass($module, $layer, $name, $appendSuffix);
+            $class = self::parseClass($module, $layer, $name, $appendSuffix); // 解析分层控制器类路径
         }
         if (class_exists($class)) {
-            return App::invokeClass($class);
+            return App::invokeClass($class); // 实例化该类
         } elseif ($empty && class_exists($emptyClass = self::parseClass($module, $layer, $empty, $appendSuffix))) {
-            return new $emptyClass(Request::instance());
+            return new $emptyClass(Request::instance()); // 实例化空控制器
         } else {
             throw new ClassNotFoundException('class not exists:' . $class, $class);
         }
@@ -477,6 +477,9 @@ class Loader
 
     /**
      * 远程调用模块的操作方法 参数格式 [模块/控制器/]操作
+     *
+     * 除了实例化分层控制器外，还可以直接调用分层控制器类的某个方法
+     *
      * @param string       $url          调用地址
      * @param string|array $vars         调用参数 支持字符串和数组
      * @param string       $layer        要调用的控制层名称
@@ -522,7 +525,7 @@ class Loader
     }
 
     /**
-     * 解析应用类的类名
+     * 解析应用类的类名，支持任意层次级别的控制器，如one.blog位于application/index/controller/one/Blog.php目录下
      * @param string $module 模块名
      * @param string $layer  层名 controller model ...
      * @param string $name   类名
