@@ -161,7 +161,7 @@ class Session
      */
     public static function get($name = '', $prefix = null)
     {
-        empty(self::$init) && self::boot();
+        empty(self::$init) && self::boot(); // 如果没有初始化，则开始初始化
         $prefix = !is_null($prefix) ? $prefix : self::$prefix;
         if ('' == $name) {
             // 获取全部的session

@@ -71,13 +71,12 @@ class Request
     protected $module;  // 当前模块名称
     protected $controller; // 当前控制器名称
     protected $action; // 当前操作名称
-    // 当前语言集
-    protected $langset;
+    protected $langset; // 当前语言集
 
     /**
      * @var array 请求参数
      */
-    protected $param   = [];
+    protected $param   = []; // 请求参数
     protected $get     = [];
     protected $post    = [];
     protected $request = [];
@@ -109,9 +108,10 @@ class Request
 
     protected $content;
 
-    // 全局过滤规则
+    // 全局过滤规则，框架默认没有设置任何过滤规则，你可以是配置文件中设置全局的过滤规则：
+    // 过滤方式包括函数、方法过滤，以及PHP内置的Types of filters
     protected $filter;
-    // Hook扩展方法
+    // Hook扩展方法，如果你需要在Request请求对象中添加自己的方法，可以使用Request对象的方法注入功能
     protected static $hook = [];
     // 绑定的属性
     protected $bind = [];
@@ -135,25 +135,25 @@ class Request
             }
         }
         if (is_null($this->filter)) {
-            $this->filter = Config::get('default_filter');
+            $this->filter = Config::get('default_filter'); // 获取默认配置过滤器
         }
 
         // 保存 php://input
-        $this->input = file_get_contents('php://input');
+        $this->input = file_get_contents('php://input'); // 获取原始请求信息
     }
 
     public function __call($method, $args)
     {
-        if (array_key_exists($method, self::$hook)) {
-            array_unshift($args, $this);
-            return call_user_func_array(self::$hook[$method], $args);
+        if (array_key_exists($method, self::$hook)) { // 检查钩子中是否存在指定的方法
+            array_unshift($args, $this); // 把请求对象加入到参数列表的第一个位置
+            return call_user_func_array(self::$hook[$method], $args); // 调用钩子中的方法
         } else {
             throw new Exception('method not exists:' . __CLASS__ . '->' . $method);
         }
     }
 
     /**
-     * Hook 方法注入
+     * Hook 方法注入，为Request对象添加额外的方法
      * @access public
      * @param string|array  $method 方法名
      * @param mixed         $callback callable
@@ -177,13 +177,13 @@ class Request
     public static function instance($options = [])
     {
         if (is_null(self::$instance)) {
-            self::$instance = new static($options);
+            self::$instance = new static($options); // 单例实现
         }
         return self::$instance;
     }
 
     /**
-     * 创建一个URL请求
+     * 创建一个URL请求，即创建一个Request实例对象
      * @access public
      * @param string    $uri URL地址
      * @param string    $method 请求类型
@@ -198,7 +198,7 @@ class Request
     {
         $server['PATH_INFO']      = '';
         $server['REQUEST_METHOD'] = strtoupper($method);
-        $info                     = parse_url($uri);
+        $info                     = parse_url($uri); // 解析路径字符串为数组信息
         if (isset($info['host'])) {
             $server['SERVER_NAME'] = $info['host'];
             $server['HTTP_HOST']   = $info['host'];
@@ -229,10 +229,10 @@ class Request
         $options[strtolower($method)] = $params;
         $queryString                  = '';
         if (isset($info['query'])) {
-            parse_str(html_entity_decode($info['query']), $query);
+            parse_str(html_entity_decode($info['query']), $query); // 解析查询字符串为变量数组
             if (!empty($params)) {
-                $params      = array_replace($query, $params);
-                $queryString = http_build_query($query, '', '&');
+                $params      = array_replace($query, $params); // 替换新的参数
+                $queryString = http_build_query($query, '', '&'); // 构建新的查询字符串
             } else {
                 $params      = $query;
                 $queryString = $info['query'];
@@ -262,7 +262,7 @@ class Request
     }
 
     /**
-     * 设置或获取当前包含协议的域名
+     * 设置或获取当前包含协议的域名，如http://tp5.com
      * @access public
      * @param string $domain 域名
      * @return string
@@ -279,7 +279,7 @@ class Request
     }
 
     /**
-     * 设置或获取当前完整URL 包括QUERY_STRING
+     * 设置或获取当前完整URL 包括QUERY_STRING，如/index/index/hello.html?name=thinkphp
      * @access public
      * @param string|true $url URL地址 true 带域名获取
      * @return string
@@ -302,11 +302,11 @@ class Request
                 $this->url = '';
             }
         }
-        return true === $url ? $this->domain() . $this->url : $this->url;
+        return true === $url ? $this->domain() . $this->url : $this->url; // 是否带有域名
     }
 
     /**
-     * 设置或获取当前URL 不含QUERY_STRING
+     * 设置或获取当前URL 不含QUERY_STRING，如/index/index/hello.html
      * @access public
      * @param string $url URL地址
      * @return string
@@ -320,11 +320,11 @@ class Request
             $str           = $this->url();
             $this->baseUrl = strpos($str, '?') ? strstr($str, '?', true) : $str;
         }
-        return true === $url ? $this->domain() . $this->baseUrl : $this->baseUrl;
+        return true === $url ? $this->domain() . $this->baseUrl : $this->baseUrl; // 是否带有域名
     }
 
     /**
-     * 设置或获取当前执行的文件 SCRIPT_NAME
+     * 设置或获取当前执行的文件 SCRIPT_NAME，如/index.php
      * @access public
      * @param string $file 当前执行的文件
      * @return string
@@ -352,7 +352,7 @@ class Request
             }
             $this->baseFile = $url;
         }
-        return true === $file ? $this->domain() . $this->baseFile : $this->baseFile;
+        return true === $file ? $this->domain() . $this->baseFile : $this->baseFile; // 是否带有域名
     }
 
     /**
@@ -373,11 +373,11 @@ class Request
             }
             $this->root = rtrim($file, '/');
         }
-        return true === $url ? $this->domain() . $this->root : $this->root;
+        return true === $url ? $this->domain() . $this->root : $this->root; // 是否带有域名
     }
 
     /**
-     * 获取当前请求URL的pathinfo信息（含URL后缀）
+     * 获取当前请求URL的pathinfo信息（含URL后缀）如index/index/hello.html
      * @access public
      * @return string
      */
@@ -409,7 +409,7 @@ class Request
     }
 
     /**
-     * 获取当前请求URL的pathinfo信息(不含URL后缀)
+     * 获取当前请求URL的pathinfo信息(不含URL后缀)，如index/index/hello
      * @access public
      * @return string
      */
@@ -433,7 +433,7 @@ class Request
     }
 
     /**
-     * 当前URL的访问后缀
+     * 当前URL的访问后缀，如html、php
      * @access public
      * @return string
      */
@@ -607,7 +607,7 @@ class Request
     }
 
     /**
-     * 获取当前请求的参数
+     * 获取当前请求的参数，获取当前请求的所有变量（经过过滤）
      * @access public
      * @param string|array  $name 变量名
      * @param mixed         $default 默认值
@@ -634,7 +634,7 @@ class Request
             // 当前请求参数和URL地址中的参数合并
             $this->param = array_merge($this->get(false), $vars, $this->route(false));
         }
-        if (true === $name) {
+        if (true === $name) { // 获取当前请求的所有变量（包含上传文件）
             // 获取包含文件上传信息的数组
             $file = $this->file();
             $data = is_array($file) ? array_merge($this->param, $file) : $this->param;
@@ -787,7 +787,7 @@ class Request
     public function session($name = '', $default = null, $filter = '')
     {
         if (empty($this->session)) {
-            $this->session = Session::get();
+            $this->session = Session::get(); // 第一次操作Session时初始化Session对象
         }
         if (is_array($name)) {
             return $this->session = array_merge($this->session, $name);
@@ -856,7 +856,7 @@ class Request
     public function file($name = '')
     {
         if (empty($this->file)) {
-            $this->file = isset($_FILES) ? $_FILES : [];
+            $this->file = isset($_FILES) ? $_FILES : []; // 获取上传文件
         }
         if (is_array($name)) {
             return $this->file = array_merge($this->file, $name);
@@ -866,22 +866,22 @@ class Request
             // 处理上传文件
             $array = [];
             foreach ($files as $key => $file) {
-                if (is_array($file['name'])) {
+                if (is_array($file['name'])) { // 如果上传多个文件
                     $item  = [];
-                    $keys  = array_keys($file);
-                    $count = count($file['name']);
+                    $keys  = array_keys($file); // 包括['name','type','tmp_name','error','size']
+                    $count = count($file['name']); // 计算上传文件个数
                     for ($i = 0; $i < $count; $i++) {
                         if (empty($file['tmp_name'][$i]) || !is_file($file['tmp_name'][$i])) {
                             continue;
                         }
-                        $temp['key'] = $key;
+                        $temp['key'] = $key; // 表单文件上传控件字段名称
                         foreach ($keys as $_key) {
                             $temp[$_key] = $file[$_key][$i];
                         }
                         $item[] = (new File($temp['tmp_name']))->setUploadInfo($temp);
                     }
                     $array[$key] = $item;
-                } else {
+                } else { // 上传单个文件
                     if ($file instanceof File) {
                         $array[$key] = $file;
                     } else {
@@ -953,7 +953,7 @@ class Request
                     $header['content-length'] = $server['CONTENT_LENGTH'];
                 }
             }
-            $this->header = array_change_key_case($header);
+            $this->header = array_change_key_case($header); // 所有的key变为小写
         }
         if (is_array($name)) {
             return $this->header = array_merge($this->header, $name);
@@ -982,7 +982,7 @@ class Request
         $name = (string) $name;
         if ('' != $name) {
             // 解析name
-            if (strpos($name, '/')) {
+            if (strpos($name, '/')) {// 如果带有数据类型
                 list($name, $type) = explode('/', $name);
             } else {
                 $type = 's';
@@ -1005,8 +1005,8 @@ class Request
         $filter = $this->getFilter($filter, $default);
 
         if (is_array($data)) {
-            array_walk_recursive($data, [$this, 'filterValue'], $filter);
-            reset($data);
+            array_walk_recursive($data, [$this, 'filterValue'], $filter); // 第三个是传递给方法的参数
+            reset($data); // 重置数组指针
         } else {
             $this->filterValue($data, $name, $filter);
         }
@@ -1588,11 +1588,12 @@ class Request
                 $key = $fun($key);
             }
 
+            // 如果缓存没有过期
             if (strtotime($this->server('HTTP_IF_MODIFIED_SINCE')) + $expire > $_SERVER['REQUEST_TIME']) {
-                // 读取缓存
+                // 读取缓存，直接返回304响应，通过抛出异常来终止程序正常执行流程
                 $response = Response::create()->code(304);
                 throw new \think\exception\HttpResponseException($response);
-            } elseif (Cache::has($key)) {
+            } elseif (Cache::has($key)) { // 如果缓存过期
                 list($content, $header) = Cache::get($key);
                 $response               = Response::create($content)->header($header);
                 throw new \think\exception\HttpResponseException($response);

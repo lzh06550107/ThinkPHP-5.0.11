@@ -137,7 +137,7 @@ class Cookie
      */
     public static function get($name = '', $prefix = null)
     {
-        !isset(self::$init) && self::init();
+        !isset(self::$init) && self::init(); // 如果没有初始化，则进行初始化
         $prefix = !is_null($prefix) ? $prefix : self::$config['prefix'];
         $key    = $prefix . $name;
 

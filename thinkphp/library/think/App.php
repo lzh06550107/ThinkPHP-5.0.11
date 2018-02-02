@@ -133,6 +133,7 @@ class App
             // 监听app_begin
             Hook::listen('app_begin', $dispatch);
             // 请求缓存检查，第二次访问相同的路由地址的时候，会自动获取请求缓存的数据响应输出，并发送304状态码。
+            // 这里通过抛出异常来跳过下面一条语句的执行
             $request->cache($config['request_cache'], $config['request_cache_expire'], $config['request_cache_except']);
 
             $data = self::exec($dispatch, $config);
@@ -412,7 +413,7 @@ class App
         if (is_callable([$instance, $action])) {
             // 执行操作方法
             $call = [$instance, $action];
-        } elseif (is_callable([$instance, '_empty'])) {
+        } elseif (is_callable([$instance, '_empty'])) { // 如果不存在该动作，且空操作存在，则调用空操作
             // 空操作
             $call = [$instance, '_empty'];
             $vars = [$actionName];
@@ -432,7 +433,7 @@ class App
     public static function initCommon()
     {
         if (empty(self::$init)) {
-            if (defined('APP_NAMESPACE')) {
+            if (defined('APP_NAMESPACE')) { // 通过使用APP_NAMESPACE常量定义来修改应用的命名空间，默认为app
                 self::$namespace = APP_NAMESPACE;
             }
             // 配置应用命名空间与文件的对应关系
@@ -457,7 +458,7 @@ class App
                 }
             }
 
-            if (!empty($config['root_namespace'])) {
+            if (!empty($config['root_namespace'])) { // ???
                 Loader::addNamespace($config['root_namespace']);
             }
 
@@ -494,7 +495,7 @@ class App
         // 定位模块目录
         $module = $module ? $module . DS : '';
 
-        // 加载模块初始化文件
+        // 加载模块初始化文件，如果没有指定模块，则加载应用初始化文件
         if (is_file(APP_PATH . $module . 'init' . EXT)) {
             include APP_PATH . $module . 'init' . EXT;
         } elseif (is_file(RUNTIME_PATH . $module . 'init' . EXT)) { // 加载模块运行时初始化文件
@@ -518,17 +519,30 @@ class App
                 }
             }
 
-            // 加载应用状态配置？？？这是干什么用的
+            // 加载应用状态配置，每个应用都可以在不同的情况下设置自己的状态（或者称之为应用场景），并且加载不同的配置文件。
+            // 'app_status'=>'office'，那么就会自动加载该状态对应的配置文件（默认位于application[module]/office.php）
             if ($config['app_status']) {
                 $config = Config::load(CONF_PATH . $module . $config['app_status'] . CONF_EXT);
             }
 
             // 加载模块行为扩展文件
+            /**
+             * 我们也可以直接在APP_PATH目录下面或者模块的目录下面定义tags.php文件来统一定义行为，定义格式如下：
+             * return [
+                'app_init'=> [
+                    'app\\index\\behavior\\CheckAuth',
+                    'app\\index\\behavior\\CheckLang'
+                ],
+                'app_end'=> [
+                    'app\\admin\\behavior\\CronRun'
+                ]
+            ]
+             */
             if (is_file(CONF_PATH . $module . 'tags' . EXT)) {
                 Hook::import(include CONF_PATH . $module . 'tags' . EXT);
             }
 
-            // 加载模块公共文件
+            // 加载应用公共文件
             if (is_file($path . 'common' . EXT)) {
                 include $path . 'common' . EXT;
             }

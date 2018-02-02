@@ -1,13 +1,7 @@
 <?php
-// +----------------------------------------------------------------------
-// | ThinkPHP [ WE CAN DO IT JUST THINK ]
-// +----------------------------------------------------------------------
-// | Copyright (c) 2006~2017 http://thinkphp.cn All rights reserved.
-// +----------------------------------------------------------------------
-// | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
-// +----------------------------------------------------------------------
-// | Author: liu21st <liu21st@gmail.com>
-// +----------------------------------------------------------------------
+/**
+ * 控制器类模板方法
+ */
 
 namespace think;
 
@@ -48,20 +42,21 @@ class Controller
     public function __construct(Request $request = null)
     {
         if (is_null($request)) {
-            $request = Request::instance();
+            $request = Request::instance(); // 获取实例化请求实例对象
         }
+        // 初始化视图实例对象
         $this->view    = View::instance(Config::get('template'), Config::get('view_replace_str'));
         $this->request = $request;
 
-        // 控制器初始化
+        // 控制器初始化，调用子类实现的方法
         $this->_initialize();
 
         // 前置操作方法
         if ($this->beforeActionList) {
             foreach ($this->beforeActionList as $method => $options) {
                 is_numeric($method) ?
-                $this->beforeAction($options) :
-                $this->beforeAction($method, $options);
+                $this->beforeAction($options) : // 调用没有选项的方法
+                $this->beforeAction($method, $options); // 调用带有选项的方法
             }
         }
     }
@@ -73,6 +68,12 @@ class Controller
 
     /**
      * 前置操作
+     *
+     * 可以为某个或者某些操作指定前置执行的操作方法，设置 beforeActionList属性可以指定某个方法为其他方法的前置操作，数组键名为需要调用的前置方法名，无值的话为当前控制器下所有方法的前置方法。
+     *
+     * ['except' => '方法名,方法名'] 表示这些方法不使用前置方法
+     * ['only' => '方法名,方法名'] 表示只有这些方法使用前置方法
+     *
      * @access protected
      * @param string $method  前置操作方法名
      * @param array  $options 调用参数 ['only'=>[...]] 或者['except'=>[...]]
@@ -83,19 +84,19 @@ class Controller
             if (is_string($options['only'])) {
                 $options['only'] = explode(',', $options['only']);
             }
-            if (!in_array($this->request->action(), $options['only'])) {
+            if (!in_array($this->request->action(), $options['only'])) { // 当前请求动作不在only中，则返回
                 return;
             }
         } elseif (isset($options['except'])) {
             if (is_string($options['except'])) {
                 $options['except'] = explode(',', $options['except']);
             }
-            if (in_array($this->request->action(), $options['except'])) {
+            if (in_array($this->request->action(), $options['except'])) { // 当前请求动作位于except中，则返回
                 return;
             }
         }
 
-        call_user_func([$this, $method]);
+        call_user_func([$this, $method]); // 在执行指定动作前执行前置方法
     }
 
     /**
@@ -174,8 +175,8 @@ class Controller
      */
     protected function validate($data, $validate, $message = [], $batch = false, $callback = null)
     {
-        if (is_array($validate)) {
-            $v = Loader::validate();
+        if (is_array($validate)) {// 如果是验证规则数组
+            $v = Loader::validate(); // 实例化验证类
             $v->rule($validate);
         } else {
             if (strpos($validate, '.')) {

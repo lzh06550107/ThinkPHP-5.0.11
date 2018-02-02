@@ -1,13 +1,7 @@
 <?php
-// +----------------------------------------------------------------------
-// | ThinkPHP [ WE CAN DO IT JUST THINK ]
-// +----------------------------------------------------------------------
-// | Copyright (c) 2006~2017 http://thinkphp.cn All rights reserved.
-// +----------------------------------------------------------------------
-// | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
-// +----------------------------------------------------------------------
-// | Author: liu21st <liu21st@gmail.com>
-// +----------------------------------------------------------------------
+/**
+ * 缓存操作类模板方法设计模式
+ */
 
 namespace think;
 
@@ -15,7 +9,7 @@ use think\cache\Driver;
 
 class Cache
 {
-    protected static $instance = [];
+    protected static $instance = []; // 缓存连接实例
     public static $readTimes   = 0;
     public static $writeTimes  = 0;
 
@@ -35,9 +29,9 @@ class Cache
      */
     public static function connect(array $options = [], $name = false)
     {
-        $type = !empty($options['type']) ? $options['type'] : 'File';
+        $type = !empty($options['type']) ? $options['type'] : 'File'; // 获取缓存的类型，默认使用文件缓存
         if (false === $name) {
-            $name = md5(serialize($options));
+            $name = md5(serialize($options)); // 默认连接名称
         }
 
         if (true === $name || !isset(self::$instance[$name])) {
@@ -46,9 +40,9 @@ class Cache
             // 记录初始化信息
             App::$debug && Log::record('[ CACHE ] INIT ' . $type, 'info');
             if (true === $name) {
-                return new $class($options);
+                return new $class($options); // 如果name为true，则直接返回新的连接，但不存储
             } else {
-                self::$instance[$name] = new $class($options);
+                self::$instance[$name] = new $class($options); // 存储一个新的连接实例
             }
         }
         return self::$instance[$name];
@@ -87,7 +81,7 @@ class Cache
         if ('' !== $name && 'complex' == Config::get('cache.type')) {
             return self::connect(Config::get('cache.' . $name), strtolower($name));
         }
-        return self::init();
+        return self::init(); // 否则使用原先的缓存
     }
 
     /**

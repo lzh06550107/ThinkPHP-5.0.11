@@ -36,7 +36,7 @@ trait Jump
      */
     protected function success($msg = '', $url = null, $data = '', $wait = 3, array $header = [])
     {
-        if (is_null($url) && !is_null(Request::instance()->server('HTTP_REFERER'))) {
+        if (is_null($url) && !is_null(Request::instance()->server('HTTP_REFERER'))) {// 如果没有指定跳转地址，默认使用$_SERVER["HTTP_REFERER"]
             $url = Request::instance()->server('HTTP_REFERER');
         } elseif ('' !== $url) {
             $url = (strpos($url, '://') || 0 === strpos($url, '/')) ? $url : Url::build($url);
@@ -52,10 +52,10 @@ trait Jump
         $type = $this->getResponseType();
         if ('html' == strtolower($type)) {
             $result = ViewTemplate::instance(Config::get('template'), Config::get('view_replace_str'))
-                ->fetch(Config::get('dispatch_success_tmpl'), $result);
+                ->fetch(Config::get('dispatch_success_tmpl'), $result); // 在配置文件中改变默认的模板
         }
         $response = Response::create($result, $type)->header($header);
-        throw new HttpResponseException($response);
+        throw new HttpResponseException($response); // 通过抛出异常，来中断正常的逻辑
     }
 
     /**
@@ -71,6 +71,7 @@ trait Jump
     protected function error($msg = '', $url = null, $data = '', $wait = 3, array $header = [])
     {
         if (is_null($url)) {
+            // error方法的默认跳转地址是javascript:history.back(-1);
             $url = Request::instance()->isAjax() ? '' : 'javascript:history.back(-1);';
         } elseif ('' !== $url) {
             $url = (strpos($url, '://') || 0 === strpos($url, '/')) ? $url : Url::build($url);
@@ -86,7 +87,7 @@ trait Jump
         $type = $this->getResponseType();
         if ('html' == strtolower($type)) {
             $result = ViewTemplate::instance(Config::get('template'), Config::get('view_replace_str'))
-                ->fetch(Config::get('dispatch_error_tmpl'), $result);
+                ->fetch(Config::get('dispatch_error_tmpl'), $result); // 在配置文件中改变默认的模板
         }
         $response = Response::create($result, $type)->header($header);
         throw new HttpResponseException($response);
@@ -121,7 +122,7 @@ trait Jump
      * @param string         $url 跳转的URL表达式
      * @param array|integer  $params 其它URL参数
      * @param integer        $code http code
-     * @param array          $with 隐式传参
+     * @param array          $with 隐式传参,可以在重定向的时候通过session闪存数据传值
      * @return void
      */
     protected function redirect($url, $params = [], $code = 302, $with = [])

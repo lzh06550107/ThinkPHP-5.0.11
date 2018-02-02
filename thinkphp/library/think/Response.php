@@ -58,7 +58,7 @@ class Response
     }
 
     /**
-     * 创建Response对象
+     * 创建Response对象，一般是Response子类对象
      * @access public
      * @param mixed  $data    输出数据
      * @param string $type    输出类型
@@ -128,7 +128,7 @@ class Response
             }
         }
 
-        if (!headers_sent() && !empty($this->header)) {
+        if (!headers_sent() && !empty($this->header)) { // 如果响应头还没有发送，且头非空
             // 发送状态码
             http_response_code($this->code);
             // 发送头部信息
